@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, ShoppingCart, UploadCloud, FileText, BarChart, Settings, LogOut, LayoutTemplate, X, Contact, ChevronDown, PlugZap } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingCart, UploadCloud, FileText, BarChart, Settings, LogOut, LayoutTemplate, X, Contact, ChevronDown, PlugZap, Briefcase, ClipboardCheck } from 'lucide-react';
 import { Page } from '../../types';
 import { classNames } from '../../lib/utils';
 import LogoIcon from './LogoIcon';
@@ -14,10 +14,14 @@ interface SidebarProps {
 
 const Sidebar = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, setIsSidebarOpen }: SidebarProps) => {
   const [isBulkUploadOpen, setIsBulkUploadOpen] = React.useState(false);
+  const [isBuyersMenuOpen, setIsBuyersMenuOpen] = React.useState(false);
   
   React.useEffect(() => {
     if (currentPage === 'bulk_upload' || currentPage === 'admin_ocr') {
       setIsBulkUploadOpen(true);
+    }
+     if (currentPage === 'buyers' || currentPage === 'admin_buyer_requests') {
+      setIsBuyersMenuOpen(true);
     }
   }, [currentPage]);
   
@@ -26,7 +30,7 @@ const Sidebar = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, setIsSi
     { id: 'farmers', label: 'Farmers', icon: Users },
     { id: 'admin_marketplace', label: 'Marketplace', icon: ShoppingCart },
     { id: 'admin_contacts', label: 'Contacts', icon: Contact },
-    // bulk_upload is handled separately as a dropdown triggered by 'admin_contacts'
+    // buyers and bulk_upload are handled separately
     { id: 'admin_blog', label: 'Blog Posts', icon: FileText },
     { id: 'admin_cms', label: 'CMS', icon: LayoutTemplate },
     { id: 'admin_analytics', label: 'Analytics', icon: BarChart },
@@ -56,7 +60,41 @@ const Sidebar = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, setIsSi
       <div className="flex-1 flex flex-col justify-between overflow-y-auto">
         <nav className="flex-1 px-4 py-4">
           <p className="px-4 text-xs text-gray-400 uppercase tracking-wider">Admin Tools</p>
-          {adminToolsNav.map((item) => {
+          
+          {/* Dashboard and Farmers links */}
+          {adminToolsNav.slice(0, 2).map((item) => (
+             <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); handleLinkClick(item.id); }}
+                className={classNames('flex items-center px-4 py-3 mt-2 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200', currentPage === item.id ? 'bg-gray-700 text-white' : '')}>
+                <item.icon className="h-5 w-5" />
+                <span className="ml-4">{item.label}</span>
+            </a>
+          ))}
+
+          {/* Buyers Dropdown */}
+           <div>
+              <button onClick={() => setIsBuyersMenuOpen(!isBuyersMenuOpen)} className={classNames('flex items-center justify-between w-full px-4 py-3 mt-2 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors duration-200', (currentPage === 'buyers' || currentPage === 'admin_buyer_requests') ? 'bg-gray-700 text-white' : '')}>
+                  <div className="flex items-center">
+                      <Briefcase className="h-5 w-5" />
+                      <span className="ml-4">Buyers</span>
+                  </div>
+                  <ChevronDown className={classNames("w-5 h-5 transform transition-transform", isBuyersMenuOpen ? "rotate-180" : "")} />
+              </button>
+              {isBuyersMenuOpen && (
+                  <div className="pl-8 py-2 space-y-1">
+                      <a href="#" onClick={(e) => { e.preventDefault(); handleLinkClick('buyers'); }}
+                         className={classNames('flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-600 hover:text-white', currentPage === 'buyers' ? 'bg-gray-600 text-white' : '')}>
+                          Buyer Management
+                      </a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); handleLinkClick('admin_buyer_requests'); }}
+                         className={classNames('flex items-center px-4 py-2 text-sm text-gray-400 rounded-lg hover:bg-gray-600 hover:text-white', currentPage === 'admin_buyer_requests' ? 'bg-gray-600 text-white' : '')}>
+                          Requests
+                      </a>
+                  </div>
+              )}
+          </div>
+          
+           {/* Remaining Admin links */}
+           {adminToolsNav.slice(2).map((item) => {
             if (item.id === 'admin_contacts') { // Insert dropdown before this item
                const isBulkUploadActive = currentPage === 'bulk_upload' || currentPage === 'admin_ocr';
                return (

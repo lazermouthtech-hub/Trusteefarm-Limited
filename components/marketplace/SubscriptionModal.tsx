@@ -1,62 +1,20 @@
 import React from 'react';
 import { X, Check } from 'lucide-react';
 import { classNames } from '../../lib/utils';
-import { SystemSettings, SubscriptionPlan } from '../../types';
-
+import { SubscriptionPlan } from '../../types';
+import { mockSubscriptionPlans } from '../../data/mockData';
 
 interface SubscriptionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    settings: SystemSettings;
-    buyerEmail: string;
     onPlanSelect: (plan: SubscriptionPlan, cycle: 'monthly' | 'yearly') => void;
+    isUpgrade: boolean;
 }
 
-const SubscriptionModal = ({ isOpen, onClose, settings, buyerEmail, onPlanSelect }: SubscriptionModalProps) => {
+const SubscriptionModal = ({ isOpen, onClose, onPlanSelect, isUpgrade }: SubscriptionModalProps) => {
     const [billingCycle, setBillingCycle] = React.useState<'monthly' | 'yearly'>('monthly');
 
     if (!isOpen) return null;
-
-    const tiers: SubscriptionPlan[] = [
-      {
-        name: 'Basic Buyer',
-        price: { monthly: 50, yearly: 500 },
-        description: 'Perfect for getting started and making initial contacts.',
-        features: [
-          'Contact up to 5 farmers per month',
-          'View basic farmer profiles',
-          'Email support',
-        ],
-        cta: 'Choose Basic',
-        popular: false,
-      },
-      {
-        name: 'Pro Buyer',
-        price: { monthly: 150, yearly: 1500 },
-        description: 'For serious buyers who need unlimited access and insights.',
-        features: [
-          'Unlimited farmer contacts',
-          'Full farmer profiles & grading details',
-          'Priority email & phone support',
-          'Access to market trend insights',
-        ],
-        cta: 'Choose Pro',
-        popular: true,
-      },
-      {
-        name: 'Enterprise',
-        price: { monthly: 0, yearly: 0 },
-        description: 'Tailored solutions for large-scale procurement needs.',
-        features: [
-          'Everything in Pro, plus:',
-          'Dedicated account manager',
-          'API access for procurement systems',
-          'Custom sourcing requests',
-        ],
-        cta: 'Contact Sales',
-        popular: false,
-      },
-    ];
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
@@ -64,8 +22,12 @@ const SubscriptionModal = ({ isOpen, onClose, settings, buyerEmail, onPlanSelect
                 <div className="p-6 border-b">
                      <div className="flex justify-between items-start">
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-800">Unlock Farmer Contact Details</h2>
-                            <p className="text-sm text-gray-500 mt-1">Choose a plan to connect directly with farmers and access premium features.</p>
+                            <h2 className="text-2xl font-bold text-gray-800">
+                                {isUpgrade ? "Upgrade Your Plan" : "Unlock Farmer Contact Details"}
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-1">
+                                {isUpgrade ? "You've used all your contacts for this period. Upgrade to connect with more farmers." : "Choose a plan to connect directly with farmers and access premium features."}
+                            </p>
                         </div>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100">
                             <X className="h-6 w-6" />
@@ -99,7 +61,7 @@ const SubscriptionModal = ({ isOpen, onClose, settings, buyerEmail, onPlanSelect
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {tiers.map((tier) => (
+                        {mockSubscriptionPlans.map((tier) => (
                             <div
                                 key={tier.name}
                                 className={classNames(
@@ -117,24 +79,18 @@ const SubscriptionModal = ({ isOpen, onClose, settings, buyerEmail, onPlanSelect
                                 <h3 className="text-xl font-semibold text-gray-900">{tier.name}</h3>
                                 <p className="mt-4 text-sm text-gray-600 min-h-[4rem]">{tier.description}</p>
                                 <div className="my-8">
-                                    {tier.name !== 'Enterprise' ? (
-                                        <>
-                                            <div className="flex items-baseline">
-                                                <span className="text-4xl font-bold text-gray-900">
-                                                    ₵{billingCycle === 'monthly' ? tier.price.monthly : tier.price.yearly}
-                                                </span>
-                                                <span className="ml-1 text-lg font-medium text-gray-500">
-                                                    /{billingCycle === 'monthly' ? 'month' : 'year'}
-                                                </span>
-                                            </div>
-                                            {billingCycle === 'yearly' && (
-                                                <p className="text-sm text-primary-600 mt-1">
-                                                    <span className="font-semibold">Save ₵{(tier.price.monthly * 12) - tier.price.yearly}</span> (2 months free)
-                                                </p>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <span className="text-4xl font-bold text-gray-900">Custom</span>
+                                    <div className="flex items-baseline">
+                                        <span className="text-4xl font-bold text-gray-900">
+                                            ₵{billingCycle === 'monthly' ? tier.price.monthly : tier.price.yearly}
+                                        </span>
+                                        <span className="ml-1 text-lg font-medium text-gray-500">
+                                            /{billingCycle === 'monthly' ? 'month' : 'year'}
+                                        </span>
+                                    </div>
+                                    {billingCycle === 'yearly' && (
+                                        <p className="text-sm text-primary-600 mt-1">
+                                            <span className="font-semibold">Save ₵{(tier.price.monthly * 12) - tier.price.yearly}</span> (2 months free)
+                                        </p>
                                     )}
                                 </div>
                                 <ul className="space-y-4 text-sm text-gray-700 flex-grow">
@@ -147,13 +103,7 @@ const SubscriptionModal = ({ isOpen, onClose, settings, buyerEmail, onPlanSelect
                                 </ul>
 
                                 <button
-                                    onClick={() => {
-                                        if (tier.name !== 'Enterprise') {
-                                            onPlanSelect(tier, billingCycle);
-                                        } else {
-                                            onClose();
-                                        }
-                                    }}
+                                    onClick={() => onPlanSelect(tier, billingCycle)}
                                     className={classNames(
                                         'mt-8 w-full py-3 px-4 rounded-md font-semibold text-center transition-colors',
                                         tier.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-primary-100 text-primary-700 hover:bg-primary-200'

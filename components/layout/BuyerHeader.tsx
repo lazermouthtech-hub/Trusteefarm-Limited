@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Search, Bell, User, Menu } from 'lucide-react';
 import { Page } from '../../types';
@@ -17,6 +16,7 @@ const BuyerHeader = ({ buyerName, currentPage, onMenuClick, theme, setTheme }: B
     buyer_dashboard: 'My Dashboard',
     marketplace: 'Farmers Marketplace',
     product_details: 'Product Details',
+    buyer_requests: 'My Requests',
   };
 
   return (

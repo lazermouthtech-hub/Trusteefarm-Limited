@@ -1,4 +1,4 @@
-import { Farmer, FarmerStatus, Produce, ProduceCategory, ProduceStatus, BlogPost, BlogPostStatus, SystemSettings, HomePageContent, AdminUser, AdminSessionLog, NewsletterSubscriber, OcrUploadHistoryItem } from '../types';
+import { Farmer, FarmerStatus, Produce, ProduceCategory, ProduceStatus, BlogPost, BlogPostStatus, SystemSettings, HomePageContent, AdminUser, AdminSessionLog, NewsletterSubscriber, OcrUploadHistoryItem, Buyer, SubscriptionPlan, BuyerRequest } from '../types';
 
 export const mockProduces: Produce[] = [
   {
@@ -128,6 +128,153 @@ export const mockFarmers: Farmer[] = [
     identityVerified: true,
     bankAccountVerified: false,
   },
+];
+
+export const mockSubscriptionPlans: SubscriptionPlan[] = [
+    {
+      name: 'Basic',
+      price: { monthly: 250, yearly: 2500 },
+      contacts: 10,
+      description: 'Perfect for getting started and making initial contacts.',
+      features: [
+        'Access details from 10 different farmers',
+        'View basic farmer profiles',
+        'Email support',
+      ],
+      cta: 'Choose Basic',
+      popular: false,
+    },
+    {
+      name: 'Standard',
+      price: { monthly: 500, yearly: 5000 },
+      contacts: 25,
+      description: 'For growing businesses sourcing regularly from farmers.',
+      features: [
+        'Access details from 25 different farmers',
+        'Full farmer profiles & grading details',
+        'Priority email support',
+      ],
+      cta: 'Choose Standard',
+      popular: true,
+    },
+    {
+      name: 'Premium',
+      price: { monthly: 1000, yearly: 10000 },
+      contacts: 50,
+      description: 'For serious buyers who need unlimited access and insights.',
+      features: [
+        'Access details from 50 different farmers',
+        'Full farmer profiles & grading details',
+        'Priority email & phone support',
+        'Access to market trend insights',
+      ],
+      cta: 'Choose Premium',
+      popular: false,
+    },
+];
+
+export const mockBuyers: Buyer[] = [
+    { 
+        id: 'buyer01', 
+        name: 'Jude Oyintaremi Beyou', 
+        email: 'judebeyou@gmail.com', 
+        registrationDate: new Date('2023-01-10'), 
+        status: 'Active', 
+        subscription: { 
+            planName: 'Premium', 
+            expiresAt: new Date('2025-01-10'),
+            contactsAllowed: 50,
+            contactsUsed: 5,
+        },
+        unlockedFarmerContacts: ['farmer_1', 'farmer_2'],
+    },
+    { 
+        id: 'buyer02', 
+        name: 'Ama Adom', 
+        email: 'ama.adom@example.com', 
+        registrationDate: new Date('2023-03-15'), 
+        status: 'Active', 
+        subscription: { 
+            planName: 'Basic', 
+            expiresAt: new Date('2024-11-20'),
+            contactsAllowed: 10,
+            contactsUsed: 10,
+        },
+        unlockedFarmerContacts: ['farmer_1', 'farmer_2', 'farmer_3', 'farmer_4', 'farmer_1_clone', 'farmer_2_clone', 'farmer_3_clone', 'farmer_4_clone', 'farmer_1_clone2', 'farmer_2_clone2' ],
+    },
+    { id: 'buyer03', name: 'Chinedu Okoro', email: 'c.okoro@example.com', registrationDate: new Date('2023-05-22'), status: 'Active', subscription: undefined, unlockedFarmerContacts: [] },
+    { 
+        id: 'buyer04', 
+        name: 'Fatimah Balogun', 
+        email: 'fati.b@example.com', 
+        registrationDate: new Date('2023-08-01'), 
+        status: 'Inactive', 
+        subscription: { 
+            planName: 'Standard', 
+            expiresAt: new Date('2023-09-01'), // Expired
+            contactsAllowed: 25,
+            contactsUsed: 15,
+        },
+        unlockedFarmerContacts: [],
+    },
+    { id: 'buyer05', name: 'Kofi Annan Jr.', email: 'k.annan@example.com', registrationDate: new Date('2023-10-05'), status: 'Active', subscription: undefined, unlockedFarmerContacts: [] },
+];
+
+export const farmProduces: string[] = [
+  'Maize', 'Rice', 'Sorghum', 'Millet',
+  'Cassava', 'Yam', 'Cocoyam', 'Sweet Potato',
+  'Tomato', 'Pepper', 'Onion', 'Okra', 'Eggplant', 'Cabbage', 'Lettuce',
+  'Mango', 'Pineapple', 'Orange', 'Banana', 'Pawpaw', 'Watermelon',
+  'Cashew', 'Cocoa', 'Coffee', 'Shea Nuts',
+  'Soybean', 'Groundnut', 'Cowpea'
+].sort();
+
+export const mockBuyerRequests: BuyerRequest[] = [
+    {
+        id: 'req_1',
+        buyerId: 'buyer01', // Jude Oyintaremi Beyou
+        buyerName: 'Jude Oyintaremi Beyou',
+        produceName: 'Organic Tomatoes',
+        quantity: 50,
+        unit: 'crates',
+        requestType: 'Local',
+        requiredByDate: new Date('2024-12-15'),
+        status: 'Pending',
+        dateSubmitted: new Date('2024-11-01'),
+        processing: 'Raw',
+        grade: 'Grade A',
+        specifications: 'Must be firm and uniformly red. Packaging in ventilated plastic crates.'
+    },
+    {
+        id: 'req_2',
+        buyerId: 'buyer01',
+        buyerName: 'Jude Oyintaremi Beyou',
+        produceName: 'Maize',
+        quantity: 10,
+        unit: 'ton',
+        requestType: 'Export',
+        destinationCountry: 'Nigeria',
+        requiredByDate: new Date('2025-01-20'),
+        status: 'In Progress',
+        dateSubmitted: new Date('2024-10-25'),
+        processing: 'Dried',
+        grade: 'Grade B',
+        specifications: 'Moisture content below 14%.'
+    },
+    {
+        id: 'req_3',
+        buyerId: 'buyer02', // Ama Adom
+        buyerName: 'Ama Adom',
+        produceName: 'Cassava',
+        quantity: 200,
+        unit: 'bags',
+        requestType: 'Local',
+        requiredByDate: new Date('2024-11-30'),
+        status: 'Fulfilled',
+        dateSubmitted: new Date('2024-09-10'),
+        processing: 'Raw',
+        grade: 'Any',
+    },
 ];
 
 export const mockBlogPosts: BlogPost[] = [

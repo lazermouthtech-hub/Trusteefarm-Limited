@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { LayoutDashboard, ShoppingCart, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, LogOut, X, ClipboardList } from 'lucide-react';
 import { Page } from '../../types';
 import { classNames } from '../../lib/utils';
 import LogoIcon from './LogoIcon';
@@ -17,6 +16,7 @@ const BuyerSidebar = ({ currentPage, setCurrentPage, onLogout, isSidebarOpen, se
   const navItems = [
     { id: 'buyer_dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'marketplace', label: 'Marketplace', icon: ShoppingCart },
+    { id: 'buyer_requests', label: 'Requests', icon: ClipboardList },
   ] as const;
 
   const handleLinkClick = (page: Page) => {

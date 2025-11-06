@@ -17,6 +17,8 @@ const Header = ({ adminName, currentPage, onMenuClick, theme, setTheme }: Header
   const pageTitles: Partial<Record<Page, string>> = {
     dashboard: 'Dashboard Overview',
     farmers: 'Farmer Management',
+    buyers: 'Buyer Management',
+    admin_buyer_requests: 'Buyer Produce Requests',
     admin_marketplace: 'Marketplace Moderation',
     admin_contacts: 'Contact Management',
     bulk_upload: 'CSV Bulk Upload',

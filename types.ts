@@ -4,13 +4,14 @@ export type UserRole = 'admin' | 'farmer' | 'buyer' | 'public';
 
 export type Page = 
   // Admin pages
-  | 'dashboard' | 'farmers' | 'admin_marketplace' | 'admin_contacts' | 'bulk_upload' 
+  | 'dashboard' | 'farmers' | 'buyers' | 'admin_marketplace' | 'admin_contacts' | 'bulk_upload' 
   | 'admin_blog' | 'admin_cms' | 'admin_analytics' | 'admin_settings' | 'admin_login' | 'admin_ocr' | 'apis'
+  | 'admin_buyer_requests'
   // Farmer pages
   | 'farmer_dashboard' | 'farmer_profile' | 'farmer_listings' | 'farmer_settings'
   | 'farmer_register' | 'farmer_login'
   // Buyer pages
-  | 'buyer_dashboard'
+  | 'buyer_dashboard' | 'buyer_requests'
   // Public pages
   | 'home' | 'marketplace' | 'blog' | 'blog_post' | 'product_details' | 'checkout';
 
@@ -96,10 +97,32 @@ export interface Buyer {
     id: string;
     name: string;
     email: string;
+    registrationDate: Date;
+    status: 'Active' | 'Inactive';
     subscription?: {
         planName: string;
         expiresAt: Date;
+        contactsAllowed: number;
+        contactsUsed: number;
     };
+    unlockedFarmerContacts?: string[];
+}
+
+export interface BuyerRequest {
+    id: string;
+    buyerId: string;
+    buyerName: string;
+    produceName: string;
+    quantity: number;
+    unit: 'kg' | 'ton' | 'bags' | 'crates' | 'pieces';
+    requestType: 'Local' | 'Export';
+    destinationCountry?: string;
+    requiredByDate: Date;
+    status: 'Pending' | 'In Progress' | 'Fulfilled' | 'Cancelled';
+    dateSubmitted: Date;
+    processing: 'Raw' | 'Dried' | 'Any';
+    grade: 'Grade A' | 'Grade B' | 'Grade C' | 'Any';
+    specifications?: string;
 }
 
 export enum BlogPostStatus {
@@ -234,6 +257,7 @@ export interface SubscriptionPlan {
   features: string[];
   cta: string;
   popular: boolean;
+  contacts: number;
 }
 
 export interface OcrUploadHistoryItem {

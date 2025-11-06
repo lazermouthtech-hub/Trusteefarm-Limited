@@ -1,6 +1,6 @@
 import React from 'react';
-import { mockFarmers, mockBlogPosts, mockSystemSettings } from './data/mockData';
-import { Farmer, Page, UserRole, FarmerStatus, BlogPost, BlogPostStatus, SystemSettings, Produce, Buyer, AdminSessionLog, NewsletterSubscriber, OcrUploadHistoryItem, GeneralInquiry, SubscriptionPlan, AdminUser, ProduceStatus } from './types';
+import { mockFarmers, mockBlogPosts, mockSystemSettings, mockBuyers, mockSubscriptionPlans, mockBuyerRequests } from './data/mockData';
+import { Farmer, Page, UserRole, FarmerStatus, BlogPost, BlogPostStatus, SystemSettings, Produce, Buyer, AdminSessionLog, NewsletterSubscriber, OcrUploadHistoryItem, GeneralInquiry, SubscriptionPlan, AdminUser, ProduceStatus, BuyerRequest } from './types';
 import { sendTransactionalEmail } from './lib/sendgrid';
 
 // Page Components
@@ -20,6 +20,8 @@ import ProductDetails from './pages/ProductDetails';
 import AdminOCR from './pages/AdminOCR';
 import AdminApis from './pages/AdminApis';
 import CheckoutPage from './pages/CheckoutPage';
+import AdminBuyers from './pages/AdminBuyers';
+import AdminBuyerRequests from './pages/AdminBuyerRequests';
 
 import HomePage from './pages/HomePage';
 import Blog from './pages/Blog';
@@ -32,6 +34,7 @@ import FarmerListings from './pages/FarmerListings';
 import FarmerSettings from './pages/FarmerSettings';
 
 import BuyerDashboard from './pages/BuyerDashboard';
+import BuyerRequests from './pages/BuyerRequests';
 
 // Layout Components
 import Sidebar from './components/layout/Sidebar';
@@ -47,7 +50,8 @@ import SimulatedInbox from './components/admin/SimulatedInbox';
 
 const App = () => {
   const [farmers, setFarmers] = React.useState<Farmer[]>(mockFarmers);
-  const [buyers, setBuyers] = React.useState<Buyer[]>([{ id: 'buyer01', name: 'Jude Oyintaremi Beyou', email: 'judebeyou@gmail.com' }]);
+  const [buyers, setBuyers] = React.useState<Buyer[]>(mockBuyers);
+  const [buyerRequests, setBuyerRequests] = React.useState<BuyerRequest[]>(mockBuyerRequests);
   const [blogPosts, setBlogPosts] = React.useState<BlogPost[]>(mockBlogPosts);
   const [systemSettings, setSystemSettings] = React.useState<SystemSettings>(mockSystemSettings);
   const [currentPage, setCurrentPage] = React.useState<Page>('home');
@@ -209,8 +213,14 @@ const App = () => {
   };
   
   const handleBuyerRegister = (name: string, email: string, pass: string) => {
-    const newBuyer: Buyer = { id: `buyer_${Date.now()}`, name, email };
-    setBuyers(prev => [...prev, newBuyer]);
+    const newBuyer: Buyer = {
+        id: `buyer_${Date.now()}`,
+        name,
+        email,
+        registrationDate: new Date(),
+        status: 'Active'
+    };
+    setBuyers(prev => [newBuyer, ...prev]);
     setCurrentUser(newBuyer);
     setCurrentPage('buyer_dashboard');
     setIsAuthModalOpen(false);
@@ -224,8 +234,48 @@ const App = () => {
 
     return { success: true };
   };
+
+  const handleAddBuyer = (newBuyerData: Omit<Buyer, 'id'>) => {
+    const newBuyer: Buyer = {
+      id: `buyer_${Date.now()}`,
+      ...newBuyerData,
+    };
+    setBuyers(prev => [newBuyer, ...prev]);
+  };
+
+  const handleUpdateBuyer = (updatedBuyer: Buyer) => {
+      setBuyers(prev => prev.map(b => b.id === updatedBuyer.id ? updatedBuyer : b));
+  };
+
+  const handleDeleteBuyer = (buyerId: string) => {
+      setBuyers(prev => prev.filter(b => b.id !== buyerId));
+  };
+
+  const handleAddBuyerRequest = (newRequestData: Omit<BuyerRequest, 'id' | 'buyerId' | 'buyerName' | 'status' | 'dateSubmitted'>) => {
+    const buyer = currentUser as Buyer;
+    if (!buyer) return;
+
+    const newRequest: BuyerRequest = {
+        id: `req_${Date.now()}`,
+        buyerId: buyer.id,
+        buyerName: buyer.name,
+        status: 'Pending',
+        dateSubmitted: new Date(),
+        ...newRequestData,
+    };
+    setBuyerRequests(prev => [newRequest, ...prev]);
+  };
+  
+   const handleUpdateBuyerRequest = (requestId: string, newStatus: BuyerRequest['status']) => {
+    setBuyerRequests(prev => prev.map(req => 
+      req.id === requestId ? { ...req, status: newStatus } : req
+    ));
+  };
   
   const handleSubscriptionSuccess = (buyerId: string, planName: string, cycle: 'monthly' | 'yearly') => {
+    const plan = mockSubscriptionPlans.find(p => p.name === planName);
+    if (!plan) return;
+
     const anYearFromNow = new Date();
     anYearFromNow.setFullYear(anYearFromNow.getFullYear() + 1);
     const aMonthFromNow = new Date();
@@ -233,7 +283,16 @@ const App = () => {
 
     const updatedBuyers = buyers.map(b => 
         b.id === buyerId 
-        ? { ...b, subscription: { planName, expiresAt: cycle === 'yearly' ? anYearFromNow : aMonthFromNow } } 
+        ? { 
+            ...b, 
+            subscription: { 
+                planName, 
+                expiresAt: cycle === 'yearly' ? anYearFromNow : aMonthFromNow,
+                contactsAllowed: plan.contacts,
+                contactsUsed: 0,
+            },
+            unlockedFarmerContacts: [], // Reset unlocked contacts on new subscription
+          } 
         : b
     );
     setBuyers(updatedBuyers);
@@ -250,6 +309,25 @@ const App = () => {
     }
 
     setCurrentPage('product_details');
+  };
+
+  const handleViewFarmerContact = (farmerId: string) => {
+    const buyer = currentUser as Buyer;
+    if (!buyer || !buyer.subscription) return;
+    if (buyer.unlockedFarmerContacts?.includes(farmerId)) return; // already unlocked
+    if (buyer.subscription.contactsUsed >= buyer.subscription.contactsAllowed) return; // no contacts left
+
+    const updatedBuyer: Buyer = {
+      ...buyer,
+      unlockedFarmerContacts: [...(buyer.unlockedFarmerContacts || []), farmerId],
+      subscription: {
+        ...buyer.subscription,
+        contactsUsed: (buyer.subscription.contactsUsed || 0) + 1,
+      },
+    };
+    
+    setBuyers(prev => prev.map(b => b.id === updatedBuyer.id ? updatedBuyer : b));
+    setCurrentUser(updatedBuyer);
   };
 
   const handleViewProductDetails = (farmerId: string, produceId: string) => {
@@ -348,6 +426,12 @@ const App = () => {
       case 'farmers':
         pageContent = <Farmers farmers={farmers} onUpdateFarmer={handleUpdateFarmer} />;
         break;
+      case 'buyers':
+        pageContent = <AdminBuyers buyers={buyers} onAddBuyer={handleAddBuyer} onUpdateBuyer={handleUpdateBuyer} onDeleteBuyer={handleDeleteBuyer} />;
+        break;
+      case 'admin_buyer_requests':
+        pageContent = <AdminBuyerRequests requests={buyerRequests} onUpdateRequestStatus={handleUpdateBuyerRequest} />;
+        break;
       case 'admin_marketplace':
         pageContent = <AdminMarketplace farmers={farmers} onUpdateFarmer={handleUpdateFarmer} />;
         break;
@@ -423,7 +507,7 @@ const App = () => {
                 const prod = farmers.find(f => f.id === selectedProduce.farmerId)?.produces.find(p => p.id === selectedProduce.produceId);
                 const farm = farmers.find(f => f.id === selectedProduce.farmerId);
                 if (prod && farm) {
-                    pageContent = <ProductDetails produce={prod} farmer={farm} currentUser={currentUser} onBack={() => setCurrentPage('marketplace')} settings={systemSettings} onPlanSelect={handlePlanSelect} />;
+                    pageContent = <ProductDetails produce={prod} farmer={farm} currentUser={currentUser} onBack={() => setCurrentPage('marketplace')} settings={systemSettings} onPlanSelect={handlePlanSelect} onViewFarmerContact={handleViewFarmerContact} />;
                 } else {
                      setCurrentPage('marketplace');
                 }
@@ -460,6 +544,13 @@ const App = () => {
           case 'buyer_dashboard':
               pageContent = <BuyerDashboard buyer={buyer} setCurrentPage={setCurrentPage}/>;
               break;
+          case 'buyer_requests':
+              pageContent = <BuyerRequests 
+                requests={buyerRequests}
+                currentBuyer={buyer}
+                onAddRequest={handleAddBuyerRequest}
+              />;
+              break;
           case 'marketplace':
               pageContent = <Marketplace farmers={farmers} onViewDetails={handleViewProductDetails} />;
               break;
@@ -468,7 +559,7 @@ const App = () => {
                   const prod = farmers.find(f => f.id === selectedProduce.farmerId)?.produces.find(p => p.id === selectedProduce.produceId);
                   const farm = farmers.find(f => f.id === selectedProduce.farmerId);
                   if (prod && farm) {
-                      pageContent = <ProductDetails produce={prod} farmer={farm} currentUser={currentUser} onBack={() => setCurrentPage('marketplace')} settings={systemSettings} onPlanSelect={handlePlanSelect} />;
+                      pageContent = <ProductDetails produce={prod} farmer={farm} currentUser={currentUser} onBack={() => setCurrentPage('marketplace')} settings={systemSettings} onPlanSelect={handlePlanSelect} onViewFarmerContact={handleViewFarmerContact} />;
                   } else {
                        setCurrentPage('marketplace');
                   }
@@ -540,7 +631,7 @@ const App = () => {
                   const prod = farmers.find(f => f.id === selectedProduce.farmerId)?.produces.find(p => p.id === selectedProduce.produceId);
                   const farm = farmers.find(f => f.id === selectedProduce.farmerId);
                   if (prod && farm) {
-                      pageContent = <ProductDetails produce={prod} farmer={farm} currentUser={currentUser} onBack={() => setCurrentPage('marketplace')} settings={systemSettings} onPlanSelect={handlePlanSelect} />;
+                      pageContent = <ProductDetails produce={prod} farmer={farm} currentUser={currentUser} onBack={() => setCurrentPage('marketplace')} settings={systemSettings} onPlanSelect={handlePlanSelect} onViewFarmerContact={handleViewFarmerContact} />;
                   } else {
                        setCurrentPage('marketplace');
                   }
